@@ -80,6 +80,59 @@
           <img src="speaking.jpeg" alt="Public Speaking" class="section-img">
         </article>
       </section>
+
+
+        <!-- Reflection Section -->
+        <section class="section fade-in" style="margin-top:32px;min-height:300px;position:relative;overflow:hidden;">
+        <h2>Reflection</h2>
+        <p id="reflectionText" style="color:var(--muted);line-height:1.8;font-size:16px;">
+            <!-- Text replaced by reflectionContent -->
+        </p>
+        </section>
+
+        <script>
+        // Section fade-in + slide
+        function revealSections() {
+            document.querySelectorAll('.section').forEach((el, i) => {
+            setTimeout(() => {
+                el.classList.add('show');
+                el.style.transition = `all 0.8s cubic-bezier(.2,.9,.2,1)`;
+                el.style.transform = `translateY(0)`;
+                el.style.opacity = 1;
+            }, i * 200);
+            });
+        }
+
+        // Floating animation for images
+        document.querySelectorAll('.section-img').forEach((img, i) => {
+            const delay = i * 150;
+            img.animate([
+            { transform: 'translateY(0px)' },
+            { transform: 'translateY(-12px)' },
+            { transform: 'translateY(0px)' }
+            ], { duration: 5000 + delay, iterations: Infinity, easing: 'ease-in-out' });
+        });
+
+        // Typed text effect for Reflection section
+        const reflectionContent = "I have dedicated years of my life to developing my communication, technical, and other skills in order to advance my professional goals. There was a year when I decided I would aim to learn as much as I could. I started with public speaking and readings in my church, progressed to more advanced speeches, and then developed other simple skills, such as cooking and baking. I then moved on to coding, digital art, and learned multiple languages, including American Sign Language and Ukrainian. Additionally, I learned to play the drums, piano, and a little bit of guitar. When I learned how to code, I started with projects that interested me, such as programming my own games (and modifications for existing games), and with that, I learned graphic design, 3D modelling, and how to draw digital art for textures in my projects. I have since then completed numerous paid single-time jobs, created computer programs and websites for my own personal use and for public distribution, gathering thousands of downloads, and competed in digital art competitions. At the same time, I was also developing not only my public speaking skills but also my language and vocabulary variety. Thanks to this, I have been able to make lasting connections with people from other cultures and life experiences. Overall, I am confident in my skills and in the application of said skills; I am aware of my value, as I like to consider my knowledge to be significantly greater than average.";
+        let i = 0;
+        function typeReflection() {
+            const el = document.getElementById('reflectionText');
+            if (!el) return;
+            const interval = setInterval(() => {
+            el.textContent += reflectionContent.charAt(i);
+            i++;
+            if (i >= reflectionContent.length) clearInterval(interval);
+            }, 28);
+        }
+
+        // Initialize everything on load
+        window.addEventListener('load', () => {
+            revealSections();
+            typeReflection();
+        });
+        </script>
+
     </main>
 
     <footer>
