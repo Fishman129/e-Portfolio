@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Marketable Skills — Alessandro Cervantes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1: linear-gradient(120deg,#071429 0%, #0b2b3a 35%, #0f3b2f 100%);
+      --glass: rgba(255,255,255,0.06);
+      --accent: #6be3b6;
+      --muted: rgba(255,255,255,0.7);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg1); color:#eef6f5; -webkit-font-smoothing:antialiased}
+    .site{min-height:100vh;display:flex;flex-direction:column}
+
+    header{backdrop-filter: blur(6px); background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); position:sticky; top:0; z-index:40; border-bottom:1px solid rgba(255,255,255,0.03)}
+    nav{display:flex;align-items:center;justify-content:space-between;padding:18px 36px;max-width:1200px;margin:0 auto}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,var(--accent), #4bd8ff);display:flex;align-items:center;justify-content:center;color:#042; font-weight:800;font-family:'Playfair Display';box-shadow:0 6px 18px rgba(11,22,30,0.6)}
+    .brand h1{margin:0;font-family:'Playfair Display';font-weight:700;letter-spacing:0.6px}
+    .brand p{margin:0;color:var(--muted);font-size:13px}
+    .nav-links{display:flex;gap:12px;align-items:center}
+    .btn{padding:10px 14px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);cursor:pointer;font-weight:600;transition:all 0.2s ease}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#4bd8ff);color:#022;border:none;box-shadow:0 8px 30px rgba(11,22,30,0.45)}
+    .btn:hover{transform:scale(1.05)}
+
+    main{max-width:1200px;margin:36px auto;padding:0 36px 80px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:26px}
+    .section{background:var(--glass);padding:22px;border-radius:14px;border:1px solid rgba(255,255,255,0.03);min-height:220px;opacity:0;transform:translateY(20px);transition:all 0.8s cubic-bezier(.2,.9,.2,1)}
+    .section.show{opacity:1;transform:none}
+    .section:hover{transform:translateY(-6px);box-shadow:0 12px 36px rgba(0,0,0,0.35)}
+    .section h2{font-family:'Playfair Display';margin:0 0 8px}
+    .section p{color:var(--muted);line-height:1.6}
+    .section-img{width:100%;border-radius:12px;margin-top:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);object-fit:cover;animation:floaty 6s ease-in-out infinite}
+
+    .bg-animated{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0.25;background:radial-gradient(circle at 10% 20%, rgba(107,227,182,0.12), transparent 6%), radial-gradient(circle at 80% 80%, rgba(75,216,255,0.12), transparent 8%);filter:blur(28px);mix-blend-mode:screen;}
+    @keyframes floaty{0%{transform:translateY(0)}50%{transform:translateY(-10px)}100%{transform:translateY(0)}}
+  </style>
+</head>
+<body>
+  <div class="bg-animated" aria-hidden="true"></div>
+  <div class="site">
+    <header>
+      <nav>
+        <div class="brand">
+          <div class="logo">AC</div>
+          <div>
+            <h1>Alessandro Cervantes</h1>
+            <p>E-Portfolio</p>
+          </div>
+        </div>
+        <div class="nav-links">
+          <button class="btn" onclick="window.location='main.html'">Home</button>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="grid">
+        <article class="section">
+          <h2>Certifications</h2>
+          <p>I hold multiple programming certifications in Python, CSS, HTML, and have years-long experience in both Java and Lua including completing paid jobs for individuals</p>
+          <img src="certificate.png" alt="Certificate" class="section-img">
+        </article>
+
+        <article class="section">
+          <h2>Languages</h2>
+          <p>I am currently dominant in both English and Spanish, with a steady learning curve in both American Sign Language and Ukranian</p>
+          <img src="languages.png" alt="Languages" class="section-img">
+        </article>
+
+        <article class="section">
+          <h2>Public Speaking Proficiency</h2>
+          <p>Because of my religion, I have given speeches and public readings for years now. The most significant have been in regional assemblies in the Valley with audiences of more than 2,000 people, giving me both the experience and the courage to prepare and deliver impactful presentations</p>
+          <img src="speaking.jpeg" alt="Public Speaking" class="section-img">
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <div>© <strong>Alessandro Cervantes</strong> — E-Portfolio</div>
+        <div style="color:var(--muted)">Made with care</div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function reveal(){
+      document.querySelectorAll('.section').forEach((el,i)=>{
+        setTimeout(()=>el.classList.add('show'), i*150);
+      });
+    }
+    window.addEventListener('load',reveal);
+  </script>
+</body>
+</html>
