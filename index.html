@@ -285,6 +285,25 @@
   <script>
     const headerHeight = document.querySelector('header').offsetHeight;
 
+    // Function to scroll & glow
+    function scrollToSectionWithGlow(section) {
+      if (!section) return;
+
+      const topPos = section.getBoundingClientRect().top + window.scrollY - headerHeight - 16;
+
+      // Add glow before scrolling
+      section.classList.add('glow-highlight');
+
+      // Smooth scroll
+      window.scrollTo({ top: topPos, behavior: 'smooth' });
+
+      // Remove glow after scroll + extra time
+      const scrollDuration = 600; // approx smooth scroll duration
+      const glowDuration = 1500; // glow remains for 1.5s
+      setTimeout(() => section.classList.remove('glow-highlight'), scrollDuration + glowDuration);
+    }
+
+    // Map cards to sections
     const cardMap = [
       { cardIndex: 0, targetId: 'engagement' },
       { cardIndex: 1, targetId: 'values' },
@@ -295,14 +314,36 @@
       const card = document.querySelectorAll('.cards .card')[cardIndex];
       const target = document.getElementById(targetId);
       if(card && target){
-        card.addEventListener('click', () => {
-          const topPos = target.getBoundingClientRect().top + window.scrollY - headerHeight - 16; // offset 16px extra
-          window.scrollTo({ top: topPos, behavior: 'smooth' });
-
-          target.classList.add('glow-highlight');
-          setTimeout(() => target.classList.remove('glow-highlight'), 1200);
-        });
+        card.addEventListener('click', () => scrollToSectionWithGlow(target));
       }
+    });
+
+    // Contact button
+    const contactBtn = document.querySelector('.nav-links .btn.primary');
+    const contactSection = document.getElementById('contact');
+    if(contactBtn && contactSection){
+      contactBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        scrollToSectionWithGlow(contactSection);
+      });
+    }
+
+    // Trigger on page load if hash is #contact
+    window.addEventListener('load', () => {
+      const contactSection = document.getElementById('contact');
+
+      if(window.location.hash === '#contact' && contactSection){
+        // Scroll first
+        scrollToSectionWithGlow(contactSection);
+
+        // Then remove the hash after scroll/glow completes
+        setTimeout(() => {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }, 1700); // match scroll+glow duration
+      } else {
+        // Normal page load: go to top
+        window.scrollTo({ top: 0 });
+    }
     });
   </script>
 
