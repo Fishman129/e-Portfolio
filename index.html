@@ -344,6 +344,22 @@
         // Normal page load: go to top
         window.scrollTo({ top: 0 });
     }
+
+    const logoEl = document.querySelector('.logo');
+    const portraitEl = document.querySelector('.portrait');
+
+    if(logoEl && portraitEl){
+      logoEl.addEventListener('click', () => {
+        // Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Add glow to portrait
+        portraitEl.classList.add('glow-highlight');
+
+        // Remove glow after 1.5s
+        setTimeout(() => portraitEl.classList.remove('glow-highlight'), 1500);
+      });
+    }
     });
   </script>
 
