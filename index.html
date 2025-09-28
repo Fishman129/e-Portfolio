@@ -164,6 +164,12 @@
       background: transparent;
     }
 
+    .glow-highlight {
+      box-shadow: 0 0 20px 4px rgba(107,227,182,0.7);
+      border: 2px solid rgba(107,227,182,0.8);
+      transition: box-shadow 0.3s ease, border 0.3s ease;
+    }
+
     a:focus,button:focus{outline:3px solid rgba(107,227,182,0.18)}
   </style>
 </head>
@@ -220,19 +226,19 @@
 
     <main>
       <section id="about" class="grid">
-        <article class="section fade-in">
+        <article id="engagement" class="section fade-in">
           <h2>Engagement</h2>
           <p>I believe making connections is one of the most important aspects of society. I often attend events (as shown in the picture), and although I lean toward the quieter side of personalities, I no longer let that stop me from expanding my network and meeting amazing people who might open doors for me in the future.</p>
           <img src="engagement.jpeg" alt="Engagement photo" class="section-img">
         </article>
 
-        <article class="section fade-in">
+        <article id="values" class="section fade-in">
           <h2>Values</h2>
           <p>Since childhood, my parents have instilled in me strong values. Today, my faith and my values go hand in hand. I often volunteer in community outreach, offering both spiritual and physical help. Being a good person has strengthened my faith and my morals. I strive to uphold honesty and avoid inappropriate behavior, and I’ve learned to see disagreements from multiple perspectives rather than only my own.</p>
           <img src="values.jpeg" alt="Values photo" class="section-img">
         </article>
 
-        <article class="section fade-in">
+        <article id="willpower" class="section fade-in">
           <h2>Willpower</h2>
           <p>I have worked hard to get where I am, both academically and personally. I am not a native English speaker, and being homeschooled for many years limited my pronunciation practice. While my vocabulary grew through writing, I still struggle with speaking — yet I keep working hard to improve daily.</p>
           <p style="margin-top:10px">In 2022 and 2023, I also took control of my health. Through months of self-dieting and exercise, I lost 50 pounds and reached my ideal weight. I am proud of my accomplishments and know my strong willpower will help me push through stress and challenges. I already have what some people lack: initiative and the strength to keep going without external motivation.</p>
@@ -275,6 +281,30 @@
       </div>
     </footer>
   </div>
+
+  <script>
+    const headerHeight = document.querySelector('header').offsetHeight;
+
+    const cardMap = [
+      { cardIndex: 0, targetId: 'engagement' },
+      { cardIndex: 1, targetId: 'values' },
+      { cardIndex: 2, targetId: 'willpower' }
+    ];
+
+    cardMap.forEach(({ cardIndex, targetId }) => {
+      const card = document.querySelectorAll('.cards .card')[cardIndex];
+      const target = document.getElementById(targetId);
+      if(card && target){
+        card.addEventListener('click', () => {
+          const topPos = target.getBoundingClientRect().top + window.scrollY - headerHeight - 16; // offset 16px extra
+          window.scrollTo({ top: topPos, behavior: 'smooth' });
+
+          target.classList.add('glow-highlight');
+          setTimeout(() => target.classList.remove('glow-highlight'), 1200);
+        });
+      }
+    });
+  </script>
 
   <script>
     // fade-in reveal
