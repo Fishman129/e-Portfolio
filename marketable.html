@@ -123,6 +123,7 @@
           </div>
         </div>
         <div class="nav-links">
+          <button class="btn primary" id="contactBtn">Contact</button>
           <button class="btn" onclick="window.location='index.html'">Home</button>
           <button class="btn" onclick="window.location='marketable.html'">Marketable Skills</button>
         </div>
@@ -254,5 +255,13 @@
 
     window.addEventListener('load',reveal);
   </script>
+
+  <script>
+  document.getElementById('contactBtn').addEventListener('click', () => {
+    // Redirect to Home with hash
+    window.location.href = 'index.html#contact';
+  });
+</script>
+
 </body>
 </html>
