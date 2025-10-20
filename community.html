@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Community Engagement — Alessandro Cervantes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1: linear-gradient(120deg,#071429 0%, #0b2b3a 35%, #0f3b2f 100%);
+      --glass: rgba(255,255,255,0.06);
+      --accent: #6be3b6;
+      --muted: rgba(255,255,255,0.7);
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background:none;
+      color:#eef6f5;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .site{min-height:100vh;display:flex;flex-direction:column}
+
+    header{
+      backdrop-filter: blur(6px);
+      background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      position:sticky; top:0; z-index:40;
+      border-bottom:1px solid rgba(255,255,255,0.03);
+    }
+
+    nav{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:18px 36px;max-width:1200px;margin:0 auto;
+    }
+
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{
+      width:54px;height:54px;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent), #4bd8ff);
+      display:flex;align-items:center;justify-content:center;
+      color:#042;font-weight:800;font-family:'Playfair Display';
+      box-shadow:0 6px 18px rgba(11,22,30,0.6);
+    }
+
+    .brand h1{margin:0;font-family:'Playfair Display';font-weight:700;letter-spacing:0.6px}
+    .brand p{margin:0;color:var(--muted);font-size:13px}
+
+    .nav-links{display:flex;gap:12px;align-items:center}
+    .btn{
+      padding:10px 14px;border-radius:10px;
+      background:transparent;border:1px solid rgba(255,255,255,0.06);
+      color:var(--muted);cursor:pointer;font-weight:600;
+      transition:all 0.2s ease;
+    }
+    .btn.primary{
+      background:linear-gradient(90deg,var(--accent),#4bd8ff);
+      color:#022;border:none;box-shadow:0 8px 30px rgba(11,22,30,0.45);
+    }
+    .btn:hover{transform:scale(1.05)}
+
+    main{max-width:1200px;margin:36px auto;padding:0 36px 80px}
+
+    .section{
+      background:var(--glass);padding:22px;border-radius:14px;
+      border:1px solid rgba(255,255,255,0.03);
+      min-height:220px;opacity:0;transform:translateY(20px);
+      transition:all 0.8s cubic-bezier(.2,.9,.2,1);
+    }
+    .section.show{opacity:1;transform:none}
+    .section:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 12px 36px rgba(0,0,0,0.35)}
+    .section h2{font-family:'Playfair Display';margin:0 0 8px}
+    .section p{color:var(--muted);line-height:1.6}
+
+    .section-img{
+      width:100%;
+      max-width:750px;
+      display:block;
+      margin:20px auto 10px auto;
+      border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.4);
+      object-fit:cover;
+      animation:floaty 6s ease-in-out infinite;
+    }
+
+    .bg-animated{
+      position:fixed;inset:0;z-index:-1;pointer-events:none;
+      background:linear-gradient(270deg,#0b2b3a,#0f3b2f,#071429,#123d52);
+      background-size:800% 800%;animation:gradientShift 20s ease infinite;
+    }
+    @keyframes gradientShift{
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+
+    #scroll-bar{
+      position:fixed;top:0;right:20px;width:12px;height:100%;
+      background:rgba(255,255,255,0.05);border-radius:6px;
+      z-index:9999;overflow:hidden;
+    }
+    #scroll-bar-fill{
+      width:100%;height:0%;
+      background:linear-gradient(180deg,var(--accent),#4bd8ff);
+      border-radius:6px;transition:height 0.2s ease-out;
+    }
+
+    html{scrollbar-width:none}
+    body::-webkit-scrollbar{width:0;background:transparent}
+
+    @keyframes floaty{0%{transform:translateY(0)}50%{transform:translateY(-10px)}100%{transform:translateY(0)}}
+    @keyframes pulseGlow{0%,100%{box-shadow:0 12px 30px rgba(107,171,227,0.4)}50%{box-shadow:0 18px 40px rgba(107,143,227,0.6)}}
+    @keyframes gradientText{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+    /* Reflection section */
+    #reflection .section{
+      text-align:center;
+      position:relative;
+      background:linear-gradient(135deg,rgba(227,107,107,0.12),rgba(148,226,23,0.12));
+      border:2px solid var(--accent);
+      border-radius:16px;
+      padding:32px;
+      box-shadow:0 12px 30px rgba(227,107,107,0.4);
+      animation:floaty 6s ease-in-out infinite,pulseGlow 3s ease-in-out infinite;
+      overflow:hidden;
+      margin-top: 20px;
+    }
+
+    #reflection h2{
+      font-family:'Playfair Display';
+      font-size:32px;
+      background:linear-gradient(90deg,#6be3b6,#4bd8ff,#e36be3,#ffb86b);
+      background-size:300% 300%;
+      background-clip:text;
+      -webkit-background-clip:text;
+      -moz-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      animation:gradientText 6s ease infinite;
+      margin-bottom:18px;
+    }
+
+    /* cursor for reflection typing */
+    .typewriter-cursor {
+      display:inline-block;
+      width:3px;
+      background:var(--accent);
+      margin-left:3px;
+      animation:blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-animated" aria-hidden="true"></div>
+  <div id="scroll-bar"><div id="scroll-bar-fill"></div></div>
+  <div class="site">
+    <header>
+      <nav>
+        <div class="brand">
+          <div class="logo">AC</div>
+          <div>
+            <h1>Alessandro Cervantes</h1>
+            <p>E-Portfolio</p>
+          </div>
+        </div>
+        <div class="nav-links">
+          <button class="btn primary" id="contactBtn">Contact</button>
+          <button class="btn" onclick="window.location='index.html'">Home</button>
+          <button class="btn" onclick="window.location='marketable.html'">Marketable Skills</button>
+          <button class="btn" onclick="window.location='community.html'">Community Engagement</button>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <h1 style="text-align:center;font-family:'Playfair Display';font-size:42px;margin-bottom:24px;">
+        <span id="pageTitle">Community Engagement</span>
+      </h1>
+
+      <section class="section" style="text-align:center;">
+        <img src="community.jpeg" alt="Community Engagement" class="section-img">
+        <p id="communityText" style="margin-top:20px;line-height:1.8;color:var(--muted);font-size:16px;">
+          Hello
+        </p>
+      </section>
+
+      <section id="reflection">
+        <div class="section">
+          <h2>Reflection</h2>
+          <p id="reflectionText" style="color:var(--muted);font-size:16px;line-height:1.75;">
+            Hiii Wassup
+          </p>
+          <span id="cursor" class="typewriter-cursor"></span>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div style="text-align:center;padding:20px 0;color:var(--muted)">
+        © <strong>Alessandro Cervantes</strong> — E-Portfolio
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function reveal(){
+      document.querySelectorAll('.section').forEach((el,i)=>{
+        setTimeout(()=>el.classList.add('show'), i*200);
+      });
+    }
+    window.addEventListener('load',reveal);
+
+    // Typewriter for title
+    const titleEl = document.getElementById('pageTitle');
+    const titleText = titleEl.textContent.trim();
+    titleEl.textContent = '';
+    let i=0;
+    const typeInterval = setInterval(()=>{
+      titleEl.textContent += titleText.charAt(i);
+      i++;
+      if(i>=titleText.length) clearInterval(typeInterval);
+    },40);
+
+    // Typewriter for Reflection paragraph
+    window.addEventListener('load', ()=>{
+      const reflectionEl = document.getElementById('reflectionText');
+      const cursorEl = document.getElementById('cursor');
+      const text = reflectionEl.textContent.trim();
+      reflectionEl.textContent = '';
+      let j = 0;
+      const interval = setInterval(()=>{
+        reflectionEl.textContent += text.charAt(j);
+        j++;
+        if (j >= text.length) {
+          clearInterval(interval);
+          cursorEl.style.display = 'none';
+        }
+      }, 35);
+    });
+
+    // Scroll progress bar
+    const scrollBarFill=document.getElementById('scroll-bar-fill');
+    window.addEventListener('scroll',()=>{
+      const scrollTop=window.scrollY;
+      const docHeight=document.body.scrollHeight-window.innerHeight;
+      scrollBarFill.style.height=(scrollTop/docHeight)*100+'%';
+    });
+
+    document.getElementById('contactBtn').addEventListener('click',()=>{
+      window.location.href='index.html#contact';
+    });
+  </script>
+</body>
+</html>
