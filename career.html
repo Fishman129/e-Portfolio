@@ -9,7 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <style>
-    :root{ --bg1:linear-gradient(120deg,#071429 0%, #0b2b3a 35%, #0f3b2f 100%); --glass:rgba(255,255,255,0.06); --accent:#6be3b6; --muted:rgba(255,255,255,0.7) }
+    :root{ --bg1:linear-gradient(120deg,#071429 0%, #0b2b3a 35%, #0f3b2f 100%); --glass:rgba(255,255,255,0.06); --accent:#6be3b6; --muted:rgba(255,255,255,0.7);
+      /* default aspect ratio is 16:9 */ --ratio:56.25%;
+    }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:#eef6f5;-webkit-font-smoothing:antialiased}
     .site{min-height:100vh;display:flex;flex-direction:column}
@@ -38,14 +40,28 @@
 
     .ppt-card{padding:22px}
     .ppt-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-    .ppt-embed{position:relative;width:100%;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);background:rgba(0,0,0,.25)}
-    .ppt-embed::before{content:"";display:block;padding-top:56.25%}
-    .ppt-embed iframe, .ppt-embed object{position:absolute;inset:0;width:100%;height:100%;border:0}
+    .ppt-actions .right{margin-left:auto;display:flex;gap:10px}
+    .ppt-embed{
+      position:relative;width:100%;
+      /* keep the outer card rounded, but the inner viewer squared -> no visible dark corners */
+      border-radius:14px;background:#fff; /* white background to kill “black bars” if viewer leaves gaps */
+      box-shadow:0 8px 24px rgba(0,0,0,.4);
+      overflow:hidden;
+    }
+    .ppt-embed::before{content:"";display:block;padding-top:var(--ratio)} /* responsive aspect box */
+    .ppt-embed .viewer{
+      position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff; /* white viewer backdrop */
+      border-radius:0; /* square inside to avoid dark rounded edges from the iframe */
+      transform:translateZ(0);image-rendering:-webkit-optimize-contrast; /* slight clarity boost for some browsers */
+    }
+    /* Full-height on tall screens without leaving empty strips */
+    @media (min-height:800px){
+      .ppt-embed{max-height:calc(100vh - 260px)} /* header/title/margins accounted for */
+    }
+
     .note{color:var(--muted);font-size:14px;margin-top:10px}
     .hint{font-size:13px;color:#bfeee0;margin-top:8px}
     .warn{color:#ffd5d5}
-    .divider{height:1px;background:rgba(255,255,255,0.08);margin:14px 0}
-    .badge{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.12);font-size:12px;color:#dff7ef}
   </style>
 </head>
 <body>
@@ -84,21 +100,17 @@
           <a id="downloadBtn" class="btn" href="Career_Project_Political_Science.pptx" download>Download .pptx</a>
           <a id="openOffice" class="btn">Open in Office Viewer</a>
           <a id="openGView" class="btn">Open in Google Viewer</a>
-          <a id="openPDF" class="btn">Open PDF (if available)</a>
+          <a id="openPDF" class="btn">Open PDF</a>
+
+          <div class="right">
+            <span class="btn" id="ratio169">Aspect: 16:9</span>
+            <span class="btn" id="ratio43">Aspect: 4:3</span>
+          </div>
         </div>
 
-        <div class="ppt-embed" id="pptEmbed"></div>
+        <div class="ppt-embed" id="pptEmbed" data-aspect="16:9"></div>
 
-        <div class="note">
-          <span class="badge">Tip</span>
-          If you’re running this locally (file://), most online viewers can’t read your file. Host these files on your web host or a public link (OneDrive/Google Drive)
-          and they’ll render.
-        </div>
-        <div class="divider"></div>
-        <div class="hint">
-          If embedding fails: export a PDF named <code>Career_Project_Political_Science.pdf</code> into the same folder and the page will auto-use it.
-        </div>
-        <div class="hint warn" id="statusMsg" style="display:none"></div>
+        <div class="hint" id="statusMsg" style="display:none"></div>
       </section>
     </main>
 
@@ -128,91 +140,81 @@
     // Contact anchor
     document.getElementById('contactBtn').addEventListener('click',()=>{ window.location.href='index.html#contact'; });
 
-    // ---------- Robust PPT embedding pipeline ----------
+    // ---------- Clean, crisp, no-gutter embedding ----------
     (function(){
       const fileBase = 'Career_Project_Political_Science';
       const pptx = fileBase + '.pptx';
       const pdf  = fileBase + '.pdf';
 
-      const embed = document.getElementById('pptEmbed');
+      const embed  = document.getElementById('pptEmbed');
       const status = document.getElementById('statusMsg');
 
+      // Aspect toggles (set --ratio: 56.25% for 16:9, 75% for 4:3)
+      function setAspect(r){
+        document.documentElement.style.setProperty('--ratio', r==='4:3' ? '75%' : '56.25%');
+        embed.dataset.aspect = r;
+      }
+      document.getElementById('ratio169').onclick = ()=> setAspect('16:9');
+      document.getElementById('ratio43').onclick  = ()=> setAspect('4:3');
+
       const absolute = new URL(pptx, window.location.href).href;
-      const officeEmbed = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(absolute);
-      const officeView  = 'https://view.officeapps.live.com/op/view.aspx?src='  + encodeURIComponent(absolute);
+      const officeEmbed = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(absolute) + '&wdProgressiveLoading=1';
       const gviewEmbed  = 'https://docs.google.com/gview?embedded=1&url=' + encodeURIComponent(absolute);
 
       // Buttons
       document.getElementById('downloadBtn').href = pptx;
-      document.getElementById('openOffice').href = officeView;
+      document.getElementById('openOffice').href = officeEmbed.replace('/op/embed.aspx','/op/view.aspx');
       document.getElementById('openOffice').target = '_blank';
       document.getElementById('openGView').href = gviewEmbed;
       document.getElementById('openGView').target = '_blank';
       document.getElementById('openPDF').href = pdf;
       document.getElementById('openPDF').target = '_blank';
 
-      // Helper: clear + mount node
-      function mount(node){ embed.innerHTML=''; embed.appendChild(node); }
-
-      // Try 1: Office Web Viewer
-      function tryOffice(){
-        const iframe = document.createElement('iframe');
-        iframe.src = officeEmbed;
-        iframe.setAttribute('allowfullscreen','true');
-        iframe.referrerPolicy = 'no-referrer-when-downgrade';
-        let ok=false;
-        const t = setTimeout(()=>{ if(!ok) tryGoogle(); }, 2500);
-        iframe.onload = ()=>{ ok=true; clearTimeout(t); /* may still be blank if blocked; user has buttons */ };
-        iframe.onerror = ()=>{ clearTimeout(t); tryGoogle(); };
-        mount(iframe);
-        status.style.display='block';
-        status.textContent='Trying Office Web Viewer…';
+      // Helper
+      function mountViewer(src, isPDF=false){
+        embed.innerHTML='';
+        const el = document.createElement('iframe');
+        el.className = 'viewer';
+        el.src = src;
+        // For PDFs, make the browser viewer fit width (crisper, no black)
+        if(isPDF){
+          // Works in most browsers:
+          el.src = src + '#view=FitH&zoom=page-width';
+        }
+        embed.appendChild(el);
       }
 
-      // Try 2: Google Docs Viewer
-      function tryGoogle(){
-        const iframe = document.createElement('iframe');
-        iframe.src = gviewEmbed;
-        let ok=false;
-        const t = setTimeout(()=>{ if(!ok) tryPDF(); }, 2500);
-        iframe.onload = ()=>{ ok=true; clearTimeout(t); };
-        iframe.onerror = ()=>{ clearTimeout(t); tryPDF(); };
-        mount(iframe);
-        status.style.display='block';
-        status.textContent='Office viewer blocked/unavailable. Falling back to Google Viewer…';
-      }
-
-      // Try 3: Local PDF if present
       function tryPDF(){
-        fetch(pdf, {method:'HEAD'}).then(r=>{
-          if(r.ok){
-            const iframe = document.createElement('iframe');
-            iframe.src = pdf + '#view=fitH';
-            mount(iframe);
-            status.textContent='Using local PDF fallback.';
-          }else{
-            tryObject();
-          }
-        }).catch(()=> tryObject());
+        // Prefer crisp PDF if present
+        return fetch(pdf, {method:'HEAD'}).then(r=>{
+          if(r.ok){ mountViewer(pdf, true); status.style.display='block'; status.textContent='Using high-quality PDF (fit to width).'; return true; }
+          return false;
+        }).catch(()=> false);
       }
 
-      // Try 4: Direct object embed (may prompt download)
-      function tryObject(){
-        const obj = document.createElement('object');
-        obj.type = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        obj.data = pptx;
-        obj.innerHTML = '<p style="padding:16px">Preview unavailable. <a href="'+pptx+'">Download the presentation</a>.</p>';
-        mount(obj);
-        status.textContent='Preview blocked by host or private file. Use the buttons above.';
+      function tryOffice(){
+        return new Promise(res=>{
+          mountViewer(officeEmbed);
+          status.style.display='block'; status.textContent='Trying Office Web Viewer…';
+          // If it’s blank/blocked, we’ll switch after 2.5s
+          setTimeout(()=>res(false), 2500);
+        });
       }
 
-      tryOffice();
-
-      // Friendly guidance if running from file://
-      if (location.protocol === 'file:'){
-        status.style.display='block';
-        status.innerHTML = 'You are viewing this locally. Online viewers cannot read local files. <br>Upload both <code>'+pptx+'</code> (and optional <code>'+pdf+'</code>) to your web host or a public link (OneDrive/Google Drive), then open this page via https.';
+      function tryGoogle(){
+        mountViewer(gviewEmbed);
+        status.style.display='block'; status.textContent='Falling back to Google Viewer.';
       }
+
+      (async function run(){
+        if (await tryPDF()) return;               // best quality, no gutters
+        const ok = await tryOffice(); if (ok) return;
+        tryGoogle();
+        // If viewing locally, warn once
+        if (location.protocol === 'file:'){
+          status.innerHTML = 'You are viewing this locally. Online viewers cannot read local files. Export a PDF and refresh, or host the files via https.';
+        }
+      })();
     })();
   </script>
 </body>
