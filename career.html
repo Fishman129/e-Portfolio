@@ -140,82 +140,123 @@
     // Contact anchor
     document.getElementById('contactBtn').addEventListener('click',()=>{ window.location.href='index.html#contact'; });
 
-    // ---------- Clean, crisp, no-gutter embedding ----------
     (function(){
-      const fileBase = 'Career_Project_Political_Science';
-      const pptx = fileBase + '.pptx';
-      const pdf  = fileBase + '.pdf';
+    const fileBase = 'Career_Project_Political_Science';
+    const pptx = fileBase + '.pptx';
+    const pdf  = fileBase + '.pdf';
 
-      const embed  = document.getElementById('pptEmbed');
-      const status = document.getElementById('statusMsg');
+    const embed  = document.getElementById('pptEmbed');
+    const status = document.getElementById('statusMsg');
 
-      // Aspect toggles (set --ratio: 56.25% for 16:9, 75% for 4:3)
-      function setAspect(r){
-        document.documentElement.style.setProperty('--ratio', r==='4:3' ? '75%' : '56.25%');
-        embed.dataset.aspect = r;
-      }
-      document.getElementById('ratio169').onclick = ()=> setAspect('16:9');
-      document.getElementById('ratio43').onclick  = ()=> setAspect('4:3');
+    // Aspect toggles (set --ratio: 56.25% for 16:9, 75% for 4:3)
+    function setAspect(r){
+      document.documentElement.style.setProperty('--ratio', r==='4:3' ? '75%' : '56.25%');
+      embed.dataset.aspect = r;
+    }
+    document.getElementById('ratio169').onclick = ()=> setAspect('16:9');
+    document.getElementById('ratio43').onclick  = ()=> setAspect('4:3');
 
-      const absolute = new URL(pptx, window.location.href).href;
-      const officeEmbed = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(absolute) + '&wdProgressiveLoading=1';
-      const gviewEmbed  = 'https://docs.google.com/gview?embedded=1&url=' + encodeURIComponent(absolute);
+    const absolute = new URL(pptx, window.location.href).href;
+    // Office options: em=2 for embed mode, wdAllowInteractivity=1, wdProgressiveLoading=1
+    const officeEmbed = 'https://view.officeapps.live.com/op/embed.aspx?src='
+                        + encodeURIComponent(absolute)
+                        + '&em=2&wdAllowInteractivity=1&wdDownloadButton=0&wdProgressiveLoading=1';
+    const officeView  = 'https://view.officeapps.live.com/op/view.aspx?src='  + encodeURIComponent(absolute);
+    const gviewEmbed  = 'https://docs.google.com/gview?embedded=1&url=' + encodeURIComponent(absolute);
 
-      // Buttons
-      document.getElementById('downloadBtn').href = pptx;
-      document.getElementById('openOffice').href = officeEmbed.replace('/op/embed.aspx','/op/view.aspx');
-      document.getElementById('openOffice').target = '_blank';
-      document.getElementById('openGView').href = gviewEmbed;
-      document.getElementById('openGView').target = '_blank';
-      document.getElementById('openPDF').href = pdf;
-      document.getElementById('openPDF').target = '_blank';
+    // Buttons
+    document.getElementById('downloadBtn').href = pptx;
+    document.getElementById('openOffice').href = officeView;
+    document.getElementById('openOffice').target = '_blank';
+    document.getElementById('openGView').href = gviewEmbed;
+    document.getElementById('openGView').target = '_blank';
+    document.getElementById('openPDF').href = pdf;
+    document.getElementById('openPDF').target = '_blank';
 
-      // Helper
-      function mountViewer(src, isPDF=false){
-        embed.innerHTML='';
-        const el = document.createElement('iframe');
-        el.className = 'viewer';
-        el.src = src;
-        // For PDFs, make the browser viewer fit width (crisper, no black)
-        if(isPDF){
-          // Works in most browsers:
-          el.src = src + '#view=FitH&zoom=page-width';
-        }
-        embed.appendChild(el);
-      }
+    function mountViewer(src, isPDF=false){
+      embed.innerHTML='';
+      const el = document.createElement('iframe');
+      el.className = 'viewer';
+      el.src = isPDF ? (src + '#view=FitH&zoom=page-width') : src;
+      el.setAttribute('allowfullscreen','true');
+      el.referrerPolicy = 'no-referrer-when-downgrade';
+      embed.appendChild(el);
+    }
 
-      function tryPDF(){
-        // Prefer crisp PDF if present
-        return fetch(pdf, {method:'HEAD'}).then(r=>{
-          if(r.ok){ mountViewer(pdf, true); status.style.display='block'; status.textContent='Using high-quality PDF (fit to width).'; return true; }
-          return false;
-        }).catch(()=> false);
-      }
+    function show(msg){
+      status.style.display='block';
+      status.textContent = msg;
+    }
 
-      function tryOffice(){
-        return new Promise(res=>{
-          mountViewer(officeEmbed);
-          status.style.display='block'; status.textContent='Trying Office Web Viewer…';
-          // If it’s blank/blocked, we’ll switch after 2.5s
-          setTimeout(()=>res(false), 2500);
+    // Try 1: Office Web Viewer (preferred)
+    function tryOffice(){
+      return new Promise(resolve=>{
+        mountViewer(officeEmbed);
+        show('Loading Office Web Viewer…');
+        // If blocked/blank, move on after a short grace
+        let done = false;
+        const timeout = setTimeout(()=>{ if(!done) resolve(false); }, 2500);
+        // 'load' can fire even if visually blocked; still let user fallbacks exist
+        embed.querySelector('iframe').addEventListener('load', ()=>{
+          done = true; clearTimeout(timeout); resolve(true);
         });
-      }
+        embed.querySelector('iframe').addEventListener('error', ()=>{
+          done = true; clearTimeout(timeout); resolve(false);
+        });
+      });
+    }
 
-      function tryGoogle(){
+    // Try 2: Google Viewer
+    function tryGoogle(){
+      return new Promise(resolve=>{
         mountViewer(gviewEmbed);
-        status.style.display='block'; status.textContent='Falling back to Google Viewer.';
-      }
+        show('Office viewer unavailable. Falling back to Google Viewer…');
+        let done = false;
+        const timeout = setTimeout(()=>{ if(!done) resolve(false); }, 2500);
+        embed.querySelector('iframe').addEventListener('load', ()=>{ done = true; clearTimeout(timeout); resolve(true); });
+        embed.querySelector('iframe').addEventListener('error', ()=>{ done = true; clearTimeout(timeout); resolve(false); });
+      });
+    }
 
-      (async function run(){
-        if (await tryPDF()) return;               // best quality, no gutters
-        const ok = await tryOffice(); if (ok) return;
-        tryGoogle();
-        // If viewing locally, warn once
-        if (location.protocol === 'file:'){
-          status.innerHTML = 'You are viewing this locally. Online viewers cannot read local files. Export a PDF and refresh, or host the files via https.';
+    // Try 3: Local PDF (crisp fallback if present)
+    function tryPDF(){
+      return fetch(pdf, {method:'HEAD'}).then(r=>{
+        if(r.ok){
+          mountViewer(pdf, true);
+          show('Using PDF fallback (fit to width) for best clarity.');
+          return true;
         }
-      })();
+        return false;
+      }).catch(()=> false);
+    }
+
+    // Try 4: Direct object embed (may prompt download)
+    function tryObject(){
+      embed.innerHTML='';
+      const obj = document.createElement('object');
+      obj.type = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      obj.data = pptx;
+      obj.setAttribute('class', 'viewer'); // fills container
+      obj.innerHTML = '<p style="padding:16px">Preview unavailable. <a href="'+pptx+'">Download the presentation</a>.</p>';
+      embed.appendChild(obj);
+      show('Preview blocked by host or private file. Use the buttons above.');
+    }
+
+    (async function run(){
+      // Prefer live presentation first
+      const officeOK = await tryOffice();
+      if (officeOK) return;
+      const gOK = await tryGoogle();
+      if (gOK) return;
+      const pdfOK = await tryPDF();
+      if (pdfOK) return;
+      tryObject();
+
+      if (location.protocol === 'file:'){
+        show('You are viewing this locally. Online viewers cannot read local files. Host the files via https or export a PDF.');
+      }
     })();
+  })();
   </script>
 </body>
 </html>
