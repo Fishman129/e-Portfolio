@@ -11,11 +11,13 @@
   <style>
     :root{
       --bg1:linear-gradient(120deg,#071429 0%, #0b2b3a 35%, #0f3b2f 100%);
-      --glass:rgba(255,255,255,0.06);
-      --accent:#6be3b6; --muted:rgba(255,255,255,0.7);
-      --ratio:56.25%;     /* container ratio: height/width * 100%  (16:9 default) */
-      --zoom:1;           /* scaling when in "cover" mode */
-      --fit:contain;      /* contain | cover (we emulate cover with scale) */
+      --glass:rgba(255,255,255,0.06); --accent:#6be3b6; --muted:rgba(255,255,255,0.7);
+      /* container aspect as height/width * 100%  */
+      --ratio:56.25%;      /* default 16:9 */
+      /* viewer transforms for “cover” masking */
+      --zoom:1;            /* 1.00 – 1.50 typically */
+      --shiftX:0px;        /* translateX */
+      --shiftY:0px;        /* translateY */
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:#eef6f5;-webkit-font-smoothing:antialiased}
@@ -45,28 +47,34 @@
 
     .ppt-card{padding:22px}
     .ppt-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-    .ppt-actions .spacer{flex:1}
+    .spacer{flex:1}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .controls .group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .controls input[type="number"]{width:80px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.2);color:#e8fff7}
+    .controls select{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.2);color:#e8fff7}
+    .controls input[type="range"]{width:140px}
+
     .ppt-embed{
-      position:relative;width:100%;border-radius:14px;background:#fff; /* white kills any viewer black padding */
+      position:relative;width:100%;
+      border-radius:14px;background:#fff; /* white matte to hide viewer padding */
       box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden;
     }
-    .ppt-embed::before{content:"";display:block;padding-top:var(--ratio)} /* responsive aspect box */
-    .viewer-wrap{
-      position:absolute;inset:0;display:grid;place-items:center;background:#fff; /* no black edges */
-      overflow:hidden;
-    }
+    .ppt-embed::before{content:"";display:block;padding-top:var(--ratio)} /* aspect box */
+
+    /* masking stage */
+    .viewer-stage{position:absolute;inset:0;overflow:hidden;background:#fff}
     .viewer{
-      width:100%;height:100%;border:0;background:#fff;border-radius:0; /* square inside */
-      transform:scale(var(--zoom)); transform-origin:center center; /* used for “cover” mode */
+      position:absolute;left:50%;top:50%;
+      width:100%;height:100%;border:0;background:#fff;border-radius:0;
+      transform-origin:center center;
+      transform:
+        translate(-50%,-50%)
+        translate(var(--shiftX), var(--shiftY))
+        scale(var(--zoom));
     }
-    /* We simulate "contain" by zoom=1 and "cover" by zoom>1 (user controlled). */
+
     .note{color:var(--muted);font-size:13px;margin-top:8px}
     .warn{color:#ffd5d5}
-    .controls-small{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-    .control-input{display:flex;gap:6px;align-items:center}
-    .control-input input{width:70px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.2);color:#e8fff7}
-    .control-range{display:flex;gap:8px;align-items:center}
-    .control-range input[type="range"]{width:160px}
   </style>
 </head>
 <body>
@@ -108,44 +116,50 @@
           <a id="openPDF" class="btn">Open PDF</a>
           <span class="spacer"></span>
 
-          <!-- Aspect presets -->
-          <div class="controls-small">
-            <span class="btn" data-preset="16:9">16:9</span>
-            <span class="btn" data-preset="16:10">16:10</span>
-            <span class="btn" data-preset="3:2">3:2</span>
-            <span class="btn" data-preset="4:3">4:3</span>
-            <span class="btn" data-preset="5:4">5:4</span>
-            <span class="btn" data-preset="1:1">1:1</span>
-            <span class="btn" data-preset="A">A-series</span>
-          </div>
-
-          <!-- Custom ratio + Fit mode + Zoom -->
-          <div class="controls-small">
-            <div class="control-input">
-              <label>Custom:</label>
-              <input id="ratioW" type="number" min="1" step="1" placeholder="W">
-              <span>:</span>
-              <input id="ratioH" type="number" min="1" step="1" placeholder="H">
-              <button class="btn" id="applyCustom">Set</button>
+          <div class="controls">
+            <!-- Aspect presets -->
+            <div class="group">
+              <span class="btn" data-preset="16:9">16:9</span>
+              <span class="btn" data-preset="16:10">16:10</span>
+              <span class="btn" data-preset="3:2">3:2</span>
+              <span class="btn" data-preset="4:3">4:3</span>
+              <span class="btn" data-preset="5:4">5:4</span>
+              <span class="btn" data-preset="1:1">1:1</span>
+              <span class="btn" data-preset="A">A-series</span>
             </div>
-            <div class="control-input">
+
+            <!-- Exact slide size (inches) -->
+            <div class="group">
+              <label>Exact Size (in):</label>
+              <input id="wIn" type="number" min="1" step="0.01" placeholder="Width">
+              <span>×</span>
+              <input id="hIn" type="number" min="1" step="0.01" placeholder="Height">
+              <button class="btn" id="applyExact">Apply</button>
+            </div>
+
+            <!-- Fit + Zoom + Offset -->
+            <div class="group">
               <label>Fit:</label>
-              <select id="fitMode" class="btn" style="padding:8px 10px">
+              <select id="fitMode">
                 <option value="contain" selected>Contain (no crop)</option>
-                <option value="cover">Cover (fill; may crop)</option>
+                <option value="cover">Cover (fill)</option>
               </select>
             </div>
-            <div class="control-range" id="zoomCtl" style="display:none">
+            <div class="group" id="coverTools" style="display:none">
               <label>Zoom</label>
-              <input id="zoomRange" type="range" min="100" max="130" value="105">
+              <input id="zoomRange" type="range" min="100" max="140" value="105">
               <span id="zoomVal">105%</span>
+              <label>X</label>
+              <input id="shiftX" type="range" min="-60" max="60" value="0">
+              <label>Y</label>
+              <input id="shiftY" type="range" min="-60" max="60" value="0">
             </div>
           </div>
         </div>
 
         <div class="ppt-embed" id="pptEmbed">
-          <div class="viewer-wrap" id="viewerWrap">
-            <!-- iframe mounts here -->
+          <div class="viewer-stage">
+            <iframe id="viewer" class="viewer" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
         </div>
 
@@ -161,142 +175,127 @@
   </div>
 
   <script>
+    // reveal
     function reveal(){ document.querySelectorAll('.section').forEach((el,i)=>setTimeout(()=>el.classList.add('show'), i*200)); }
     window.addEventListener('load',reveal);
-
-    // Typewriter
-    (function(){ const tEl=document.getElementById('pageTitle'); const t=tEl.textContent.trim(); tEl.textContent=''; let i=0; const h=setInterval(()=>{ tEl.textContent+=t.charAt(i++); if(i>=t.length) clearInterval(h); },40); })();
-
-    // Scroll progress
+    // typewriter
+    (function(){ const el=document.getElementById('pageTitle'); const t=el.textContent.trim(); el.textContent=''; let i=0; const h=setInterval(()=>{ el.textContent+=t.charAt(i++); if(i>=t.length) clearInterval(h); },40); })();
+    // scroll bar
     const scrollBarFill=document.getElementById('scroll-bar-fill');
     window.addEventListener('scroll',()=>{ const st=window.scrollY, dh=document.body.scrollHeight-window.innerHeight; scrollBarFill.style.height=(st/dh)*100+'%'; });
-
     document.getElementById('contactBtn').addEventListener('click',()=>{ window.location.href='index.html#contact'; });
 
-    // ---------- Embedding (Office -> Google -> PDF -> Object) + Advanced aspect/cover ----------
+    // ------- embed pipeline (Office -> Google -> PDF -> Object) -------
     (function(){
       const fileBase = 'Career_Project_Political_Science';
       const pptx = fileBase + '.pptx';
       const pdf  = fileBase + '.pdf';
 
-      const wrap  = document.getElementById('viewerWrap');
-      const embed = document.getElementById('pptEmbed');
       const status = document.getElementById('statusMsg');
+      const viewer = document.getElementById('viewer');
 
-      // Buttons
       const absolute = new URL(pptx, window.location.href).href;
       const officeEmbed = 'https://view.officeapps.live.com/op/embed.aspx?src='
-                          + encodeURIComponent(absolute)
-                          + '&em=2&wdAllowInteractivity=1&wdDownloadButton=0&wdProgressiveLoading=1';
-      const officeView  = 'https://view.officeapps.live.com/op/view.aspx?src=' + encodeURIComponent(absolute);
-      const gviewEmbed  = 'https://docs.google.com/gview?embedded=1&url=' + encodeURIComponent(absolute);
-
-      document.getElementById('downloadBtn').href = pptx;
-      document.getElementById('openOffice').href = officeView; document.getElementById('openOffice').target = '_blank';
-      document.getElementById('openGView').href = gviewEmbed;  document.getElementById('openGView').target = '_blank';
-      document.getElementById('openPDF').href = pdf;           document.getElementById('openPDF').target = '_blank';
+                        + encodeURIComponent(absolute)
+                        + '&em=2&wdAllowInteractivity=1&wdDownloadButton=0&wdProgressiveLoading=1';
+      const gviewEmbed = 'https://docs.google.com/gview?embedded=1&url=' + encodeURIComponent(absolute);
 
       function show(msg){ status.style.display='block'; status.textContent=msg; }
-      function clearStatus(){ status.style.display='none'; status.textContent=''; }
 
-      function mount(src){
-        wrap.innerHTML='';
-        const iframe = document.createElement('iframe');
-        iframe.className='viewer';
-        iframe.src = src;
-        iframe.setAttribute('allowfullscreen','true');
-        iframe.referrerPolicy = 'no-referrer-when-downgrade';
-        wrap.appendChild(iframe);
-        return iframe;
+      async function tryOffice(){
+        return new Promise(res=>{
+          viewer.src = officeEmbed;
+          show('Loading Office Web Viewer…');
+          let done=false; const to=setTimeout(()=>{ if(!done) res(false); }, 2500);
+          viewer.addEventListener('load', ()=>{ done=true; clearTimeout(to); res(true); }, {once:true});
+          viewer.addEventListener('error',()=>{ done=true; clearTimeout(to); res(false); }, {once:true});
+        });
       }
-
-      // Try Office first
-      async function run(){
-        clearStatus();
-        show('Loading Office Web Viewer…');
-        let ifr = mount(officeEmbed);
-        let ok = await new Promise(res=>{
-          let done=false; const to=setTimeout(()=>{ if(!done) res(false); },2500);
-          ifr.addEventListener('load',()=>{ done=true; clearTimeout(to); res(true); });
-          ifr.addEventListener('error',()=>{ done=true; clearTimeout(to); res(false); });
+      async function tryGoogle(){
+        return new Promise(res=>{
+          viewer.src = gviewEmbed;
+          show('Office unavailable, trying Google Viewer…');
+          let done=false; const to=setTimeout(()=>{ if(!done) res(false); }, 2500);
+          viewer.addEventListener('load', ()=>{ done=true; clearTimeout(to); res(true); }, {once:true});
+          viewer.addEventListener('error',()=>{ done=true; clearTimeout(to); res(false); }, {once:true});
         });
-        if(ok) return;
-        // Google fallback
-        show('Office viewer unavailable. Trying Google Viewer…');
-        ifr = mount(gviewEmbed);
-        ok = await new Promise(res=>{
-          let done=false; const to=setTimeout(()=>{ if(!done) res(false); },2500);
-          ifr.addEventListener('load',()=>{ done=true; clearTimeout(to); res(true); });
-          ifr.addEventListener('error',()=>{ done=true; clearTimeout(to); res(false); });
-        });
-        if(ok) return;
-        // PDF fallback
+      }
+      async function tryPDF(){
         try{
           const head = await fetch(pdf,{method:'HEAD'});
-          if(head.ok){
-            show('Using PDF fallback (fit width).');
-            mount(pdf + '#view=FitH&zoom=page-width');
-            return;
-          }
+          if(head.ok){ viewer.src = pdf + '#view=FitH&zoom=page-width'; show('Using PDF fallback (fit width).'); return true; }
         }catch(_){}
-        // Object fallback
-        wrap.innerHTML = '<object class="viewer" type="application/vnd.openxmlformats-officedocument.presentationml.presentation" data="'+pptx+'"><p style="padding:16px">Preview unavailable. <a href="'+pptx+'">Download the presentation</a>.</p></object>';
-        show('Preview blocked by host or private file. Use the buttons above.');
-        if(location.protocol==='file:'){ show('You are viewing this locally. Online viewers cannot read local files. Host via https or export a PDF.'); }
+        return false;
       }
-      run();
+      function tryObject(){
+        const stage = viewer.parentElement;
+        stage.innerHTML = '<object class="viewer" type="application/vnd.openxmlformats-officedocument.presentationml.presentation" data="'+pptx+'"><p style="padding:16px">Preview unavailable. <a href="'+pptx+'">Download</a>.</p></object>';
+        show('Preview blocked by host or private file. Use the buttons above.');
+      }
 
-      // ------- Aspect presets -------
+      (async function run(){
+        if (await tryOffice()) return;
+        if (await tryGoogle()) return;
+        if (await tryPDF())   return;
+        tryObject();
+        if (location.protocol==='file:'){ show('You are viewing locally. Host via https or use the PDF fallback.'); }
+      })();
+
+      // Buttons
+      document.getElementById('downloadBtn').href = pptx;
+      document.getElementById('openOffice').href = officeEmbed; document.getElementById('openOffice').target = '_blank';
+      document.getElementById('openGView').href  = gviewEmbed;  document.getElementById('openGView').target  = '_blank';
+      document.getElementById('openPDF').href    = pdf;         document.getElementById('openPDF').target    = '_blank';
+    })();
+
+    // ------- Aspect presets + Exact size + Cover tools -------
+    (function(){
       const presets = {
-        '16:9': 9/16,       // ratio = H/W
-        '16:10': 10/16,
-        '3:2': 2/3,
-        '4:3': 3/4,
-        '5:4': 4/5,
-        '1:1': 1,
-        'A': Math.SQRT1_2   // ~0.7071 (H/W) => 70.71%
+        '16:9': 9/16, '16:10': 10/16, '3:2': 2/3, '4:3': 3/4, '5:4': 4/5, '1:1': 1, 'A': Math.SQRT1_2
       };
       document.querySelectorAll('[data-preset]').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           const key = btn.getAttribute('data-preset');
-          const HW = presets[key];
-          setRatioPercent(HW * 100);
+          const pct = (presets[key] * 100).toFixed(6) + '%';
+          document.documentElement.style.setProperty('--ratio', pct);
         });
       });
 
-      // Custom ratio W:H
-      function setRatioPercent(percent){ document.documentElement.style.setProperty('--ratio', percent+'%'); }
-      document.getElementById('applyCustom').addEventListener('click', ()=>{
-        const w = parseFloat(document.getElementById('ratioW').value);
-        const h = parseFloat(document.getElementById('ratioH').value);
+      // Exact slide size (inches) -> ratio
+      document.getElementById('applyExact').addEventListener('click', ()=>{
+        const w = parseFloat(document.getElementById('wIn').value);
+        const h = parseFloat(document.getElementById('hIn').value);
         if(w>0 && h>0){
-          const percent = (h / w) * 100;
-          setRatioPercent(percent);
+          const pct = (h / w) * 100; // height/width *100%
+          document.documentElement.style.setProperty('--ratio', pct + '%');
         }
       });
 
-      // Fit mode + Zoom
-      const fitMode = document.getElementById('fitMode');
-      const zoomCtl = document.getElementById('zoomCtl');
-      const zoomRange = document.getElementById('zoomRange');
-      const zoomVal = document.getElementById('zoomVal');
+      const fitMode  = document.getElementById('fitMode');
+      const tools    = document.getElementById('coverTools');
+      const zoom     = document.getElementById('zoomRange');
+      const zoomVal  = document.getElementById('zoomVal');
+      const shiftX   = document.getElementById('shiftX');
+      const shiftY   = document.getElementById('shiftY');
 
       function applyFit(){
-        if(fitMode.value === 'cover'){
-          zoomCtl.style.display='flex';
-          document.documentElement.style.setProperty('--zoom', (parseInt(zoomRange.value,10)/100).toString());
+        if(fitMode.value==='cover'){
+          tools.style.display='flex';
+          document.documentElement.style.setProperty('--zoom', (parseInt(zoom.value,10)/100).toString());
+          document.documentElement.style.setProperty('--shiftX', shiftX.value+'px');
+          document.documentElement.style.setProperty('--shiftY', shiftY.value+'px');
         }else{
-          zoomCtl.style.display='none';
+          tools.style.display='none';
           document.documentElement.style.setProperty('--zoom', '1');
+          document.documentElement.style.setProperty('--shiftX', '0px');
+          document.documentElement.style.setProperty('--shiftY', '0px');
         }
       }
       fitMode.addEventListener('change', applyFit);
-      zoomRange.addEventListener('input', ()=>{
-        zoomVal.textContent = zoomRange.value + '%';
-        document.documentElement.style.setProperty('--zoom', (parseInt(zoomRange.value,10)/100).toString());
-      });
+      zoom.addEventListener('input', ()=>{ zoomVal.textContent = zoom.value+'%'; document.documentElement.style.setProperty('--zoom', (parseInt(zoom.value,10)/100).toString()); });
+      shiftX.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--shiftX', shiftX.value+'px'); });
+      shiftY.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--shiftY', shiftY.value+'px'); });
       applyFit();
-
     })();
   </script>
 </body>
