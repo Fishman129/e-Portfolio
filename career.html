@@ -9,8 +9,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <style>
-    :root{ --bg1:linear-gradient(120deg,#071429 0%, #0b2b3a 35%, #0f3b2f 100%); --glass:rgba(255,255,255,0.06); --accent:#6be3b6; --muted:rgba(255,255,255,0.7);
-      /* default aspect ratio is 16:9 */ --ratio:56.25%;
+    :root{
+      --bg1:linear-gradient(120deg,#071429 0%, #0b2b3a 35%, #0f3b2f 100%);
+      --glass:rgba(255,255,255,0.06);
+      --accent:#6be3b6; --muted:rgba(255,255,255,0.7);
+      --ratio:56.25%;     /* container ratio: height/width * 100%  (16:9 default) */
+      --zoom:1;           /* scaling when in "cover" mode */
+      --fit:contain;      /* contain | cover (we emulate cover with scale) */
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:#eef6f5;-webkit-font-smoothing:antialiased}
@@ -18,7 +23,7 @@
     header{backdrop-filter:blur(6px);background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));position:sticky;top:0;z-index:40;border-bottom:1px solid rgba(255,255,255,0.03)}
     nav{display:flex;align-items:center;justify-content:space-between;padding:18px 36px;max-width:1200px;margin:0 auto}
     .brand{display:flex;align-items:center;gap:14px}
-    .logo{width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#4bd8ff);display:flex;align-items:center;justify-content:center;color:#042;font-weight:800;font-family:'Playfair Display';box-shadow:0 6px 18px rgba(11,22,30,0.6)}
+    .logo{width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,var(--accent), #4bd8ff);display:flex;align-items:center;justify-content:center;color:#042;font-weight:800;font-family:'Playfair Display';box-shadow:0 6px 18px rgba(11,22,30,0.6)}
     .brand h1{margin:0;font-family:'Playfair Display';font-weight:700;letter-spacing:0.6px}
     .brand p{margin:0;color:var(--muted);font-size:13px}
     .nav-links{display:flex;gap:12px;align-items:center}
@@ -39,29 +44,29 @@
     html{scrollbar-width:none} body::-webkit-scrollbar{width:0;background:transparent}
 
     .ppt-card{padding:22px}
-    .ppt-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-    .ppt-actions .right{margin-left:auto;display:flex;gap:10px}
+    .ppt-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    .ppt-actions .spacer{flex:1}
     .ppt-embed{
-      position:relative;width:100%;
-      /* keep the outer card rounded, but the inner viewer squared -> no visible dark corners */
-      border-radius:14px;background:#fff; /* white background to kill “black bars” if viewer leaves gaps */
-      box-shadow:0 8px 24px rgba(0,0,0,.4);
-      overflow:hidden;
+      position:relative;width:100%;border-radius:14px;background:#fff; /* white kills any viewer black padding */
+      box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden;
     }
     .ppt-embed::before{content:"";display:block;padding-top:var(--ratio)} /* responsive aspect box */
-    .ppt-embed .viewer{
-      position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff; /* white viewer backdrop */
-      border-radius:0; /* square inside to avoid dark rounded edges from the iframe */
-      transform:translateZ(0);image-rendering:-webkit-optimize-contrast; /* slight clarity boost for some browsers */
+    .viewer-wrap{
+      position:absolute;inset:0;display:grid;place-items:center;background:#fff; /* no black edges */
+      overflow:hidden;
     }
-    /* Full-height on tall screens without leaving empty strips */
-    @media (min-height:800px){
-      .ppt-embed{max-height:calc(100vh - 260px)} /* header/title/margins accounted for */
+    .viewer{
+      width:100%;height:100%;border:0;background:#fff;border-radius:0; /* square inside */
+      transform:scale(var(--zoom)); transform-origin:center center; /* used for “cover” mode */
     }
-
-    .note{color:var(--muted);font-size:14px;margin-top:10px}
-    .hint{font-size:13px;color:#bfeee0;margin-top:8px}
+    /* We simulate "contain" by zoom=1 and "cover" by zoom>1 (user controlled). */
+    .note{color:var(--muted);font-size:13px;margin-top:8px}
     .warn{color:#ffd5d5}
+    .controls-small{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .control-input{display:flex;gap:6px;align-items:center}
+    .control-input input{width:70px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.2);color:#e8fff7}
+    .control-range{display:flex;gap:8px;align-items:center}
+    .control-range input[type="range"]{width:160px}
   </style>
 </head>
 <body>
@@ -101,16 +106,50 @@
           <a id="openOffice" class="btn">Open in Office Viewer</a>
           <a id="openGView" class="btn">Open in Google Viewer</a>
           <a id="openPDF" class="btn">Open PDF</a>
+          <span class="spacer"></span>
 
-          <div class="right">
-            <span class="btn" id="ratio169">Aspect: 16:9</span>
-            <span class="btn" id="ratio43">Aspect: 4:3</span>
+          <!-- Aspect presets -->
+          <div class="controls-small">
+            <span class="btn" data-preset="16:9">16:9</span>
+            <span class="btn" data-preset="16:10">16:10</span>
+            <span class="btn" data-preset="3:2">3:2</span>
+            <span class="btn" data-preset="4:3">4:3</span>
+            <span class="btn" data-preset="5:4">5:4</span>
+            <span class="btn" data-preset="1:1">1:1</span>
+            <span class="btn" data-preset="A">A-series</span>
+          </div>
+
+          <!-- Custom ratio + Fit mode + Zoom -->
+          <div class="controls-small">
+            <div class="control-input">
+              <label>Custom:</label>
+              <input id="ratioW" type="number" min="1" step="1" placeholder="W">
+              <span>:</span>
+              <input id="ratioH" type="number" min="1" step="1" placeholder="H">
+              <button class="btn" id="applyCustom">Set</button>
+            </div>
+            <div class="control-input">
+              <label>Fit:</label>
+              <select id="fitMode" class="btn" style="padding:8px 10px">
+                <option value="contain" selected>Contain (no crop)</option>
+                <option value="cover">Cover (fill; may crop)</option>
+              </select>
+            </div>
+            <div class="control-range" id="zoomCtl" style="display:none">
+              <label>Zoom</label>
+              <input id="zoomRange" type="range" min="100" max="130" value="105">
+              <span id="zoomVal">105%</span>
+            </div>
           </div>
         </div>
 
-        <div class="ppt-embed" id="pptEmbed" data-aspect="16:9"></div>
+        <div class="ppt-embed" id="pptEmbed">
+          <div class="viewer-wrap" id="viewerWrap">
+            <!-- iframe mounts here -->
+          </div>
+        </div>
 
-        <div class="hint" id="statusMsg" style="display:none"></div>
+        <div class="note warn" id="statusMsg" style="display:none"></div>
       </section>
     </main>
 
@@ -122,141 +161,143 @@
   </div>
 
   <script>
-    // Reveal animation
     function reveal(){ document.querySelectorAll('.section').forEach((el,i)=>setTimeout(()=>el.classList.add('show'), i*200)); }
     window.addEventListener('load',reveal);
 
-    // Typewriter for title
-    (function(){
-      const titleEl = document.getElementById('pageTitle');
-      const t = titleEl.textContent.trim(); titleEl.textContent = '';
-      let i=0; const h=setInterval(()=>{ titleEl.textContent += t.charAt(i++); if(i>=t.length) clearInterval(h); },40);
-    })();
+    // Typewriter
+    (function(){ const tEl=document.getElementById('pageTitle'); const t=tEl.textContent.trim(); tEl.textContent=''; let i=0; const h=setInterval(()=>{ tEl.textContent+=t.charAt(i++); if(i>=t.length) clearInterval(h); },40); })();
 
-    // Scroll progress bar
+    // Scroll progress
     const scrollBarFill=document.getElementById('scroll-bar-fill');
     window.addEventListener('scroll',()=>{ const st=window.scrollY, dh=document.body.scrollHeight-window.innerHeight; scrollBarFill.style.height=(st/dh)*100+'%'; });
 
-    // Contact anchor
     document.getElementById('contactBtn').addEventListener('click',()=>{ window.location.href='index.html#contact'; });
 
+    // ---------- Embedding (Office -> Google -> PDF -> Object) + Advanced aspect/cover ----------
     (function(){
-    const fileBase = 'Career_Project_Political_Science';
-    const pptx = fileBase + '.pptx';
-    const pdf  = fileBase + '.pdf';
+      const fileBase = 'Career_Project_Political_Science';
+      const pptx = fileBase + '.pptx';
+      const pdf  = fileBase + '.pdf';
 
-    const embed  = document.getElementById('pptEmbed');
-    const status = document.getElementById('statusMsg');
+      const wrap  = document.getElementById('viewerWrap');
+      const embed = document.getElementById('pptEmbed');
+      const status = document.getElementById('statusMsg');
 
-    // Aspect toggles (set --ratio: 56.25% for 16:9, 75% for 4:3)
-    function setAspect(r){
-      document.documentElement.style.setProperty('--ratio', r==='4:3' ? '75%' : '56.25%');
-      embed.dataset.aspect = r;
-    }
-    document.getElementById('ratio169').onclick = ()=> setAspect('16:9');
-    document.getElementById('ratio43').onclick  = ()=> setAspect('4:3');
+      // Buttons
+      const absolute = new URL(pptx, window.location.href).href;
+      const officeEmbed = 'https://view.officeapps.live.com/op/embed.aspx?src='
+                          + encodeURIComponent(absolute)
+                          + '&em=2&wdAllowInteractivity=1&wdDownloadButton=0&wdProgressiveLoading=1';
+      const officeView  = 'https://view.officeapps.live.com/op/view.aspx?src=' + encodeURIComponent(absolute);
+      const gviewEmbed  = 'https://docs.google.com/gview?embedded=1&url=' + encodeURIComponent(absolute);
 
-    const absolute = new URL(pptx, window.location.href).href;
-    // Office options: em=2 for embed mode, wdAllowInteractivity=1, wdProgressiveLoading=1
-    const officeEmbed = 'https://view.officeapps.live.com/op/embed.aspx?src='
-                        + encodeURIComponent(absolute)
-                        + '&em=2&wdAllowInteractivity=1&wdDownloadButton=0&wdProgressiveLoading=1';
-    const officeView  = 'https://view.officeapps.live.com/op/view.aspx?src='  + encodeURIComponent(absolute);
-    const gviewEmbed  = 'https://docs.google.com/gview?embedded=1&url=' + encodeURIComponent(absolute);
+      document.getElementById('downloadBtn').href = pptx;
+      document.getElementById('openOffice').href = officeView; document.getElementById('openOffice').target = '_blank';
+      document.getElementById('openGView').href = gviewEmbed;  document.getElementById('openGView').target = '_blank';
+      document.getElementById('openPDF').href = pdf;           document.getElementById('openPDF').target = '_blank';
 
-    // Buttons
-    document.getElementById('downloadBtn').href = pptx;
-    document.getElementById('openOffice').href = officeView;
-    document.getElementById('openOffice').target = '_blank';
-    document.getElementById('openGView').href = gviewEmbed;
-    document.getElementById('openGView').target = '_blank';
-    document.getElementById('openPDF').href = pdf;
-    document.getElementById('openPDF').target = '_blank';
+      function show(msg){ status.style.display='block'; status.textContent=msg; }
+      function clearStatus(){ status.style.display='none'; status.textContent=''; }
 
-    function mountViewer(src, isPDF=false){
-      embed.innerHTML='';
-      const el = document.createElement('iframe');
-      el.className = 'viewer';
-      el.src = isPDF ? (src + '#view=FitH&zoom=page-width') : src;
-      el.setAttribute('allowfullscreen','true');
-      el.referrerPolicy = 'no-referrer-when-downgrade';
-      embed.appendChild(el);
-    }
-
-    function show(msg){
-      status.style.display='block';
-      status.textContent = msg;
-    }
-
-    // Try 1: Office Web Viewer (preferred)
-    function tryOffice(){
-      return new Promise(resolve=>{
-        mountViewer(officeEmbed);
-        show('Loading Office Web Viewer…');
-        // If blocked/blank, move on after a short grace
-        let done = false;
-        const timeout = setTimeout(()=>{ if(!done) resolve(false); }, 2500);
-        // 'load' can fire even if visually blocked; still let user fallbacks exist
-        embed.querySelector('iframe').addEventListener('load', ()=>{
-          done = true; clearTimeout(timeout); resolve(true);
-        });
-        embed.querySelector('iframe').addEventListener('error', ()=>{
-          done = true; clearTimeout(timeout); resolve(false);
-        });
-      });
-    }
-
-    // Try 2: Google Viewer
-    function tryGoogle(){
-      return new Promise(resolve=>{
-        mountViewer(gviewEmbed);
-        show('Office viewer unavailable. Falling back to Google Viewer…');
-        let done = false;
-        const timeout = setTimeout(()=>{ if(!done) resolve(false); }, 2500);
-        embed.querySelector('iframe').addEventListener('load', ()=>{ done = true; clearTimeout(timeout); resolve(true); });
-        embed.querySelector('iframe').addEventListener('error', ()=>{ done = true; clearTimeout(timeout); resolve(false); });
-      });
-    }
-
-    // Try 3: Local PDF (crisp fallback if present)
-    function tryPDF(){
-      return fetch(pdf, {method:'HEAD'}).then(r=>{
-        if(r.ok){
-          mountViewer(pdf, true);
-          show('Using PDF fallback (fit to width) for best clarity.');
-          return true;
-        }
-        return false;
-      }).catch(()=> false);
-    }
-
-    // Try 4: Direct object embed (may prompt download)
-    function tryObject(){
-      embed.innerHTML='';
-      const obj = document.createElement('object');
-      obj.type = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-      obj.data = pptx;
-      obj.setAttribute('class', 'viewer'); // fills container
-      obj.innerHTML = '<p style="padding:16px">Preview unavailable. <a href="'+pptx+'">Download the presentation</a>.</p>';
-      embed.appendChild(obj);
-      show('Preview blocked by host or private file. Use the buttons above.');
-    }
-
-    (async function run(){
-      // Prefer live presentation first
-      const officeOK = await tryOffice();
-      if (officeOK) return;
-      const gOK = await tryGoogle();
-      if (gOK) return;
-      const pdfOK = await tryPDF();
-      if (pdfOK) return;
-      tryObject();
-
-      if (location.protocol === 'file:'){
-        show('You are viewing this locally. Online viewers cannot read local files. Host the files via https or export a PDF.');
+      function mount(src){
+        wrap.innerHTML='';
+        const iframe = document.createElement('iframe');
+        iframe.className='viewer';
+        iframe.src = src;
+        iframe.setAttribute('allowfullscreen','true');
+        iframe.referrerPolicy = 'no-referrer-when-downgrade';
+        wrap.appendChild(iframe);
+        return iframe;
       }
+
+      // Try Office first
+      async function run(){
+        clearStatus();
+        show('Loading Office Web Viewer…');
+        let ifr = mount(officeEmbed);
+        let ok = await new Promise(res=>{
+          let done=false; const to=setTimeout(()=>{ if(!done) res(false); },2500);
+          ifr.addEventListener('load',()=>{ done=true; clearTimeout(to); res(true); });
+          ifr.addEventListener('error',()=>{ done=true; clearTimeout(to); res(false); });
+        });
+        if(ok) return;
+        // Google fallback
+        show('Office viewer unavailable. Trying Google Viewer…');
+        ifr = mount(gviewEmbed);
+        ok = await new Promise(res=>{
+          let done=false; const to=setTimeout(()=>{ if(!done) res(false); },2500);
+          ifr.addEventListener('load',()=>{ done=true; clearTimeout(to); res(true); });
+          ifr.addEventListener('error',()=>{ done=true; clearTimeout(to); res(false); });
+        });
+        if(ok) return;
+        // PDF fallback
+        try{
+          const head = await fetch(pdf,{method:'HEAD'});
+          if(head.ok){
+            show('Using PDF fallback (fit width).');
+            mount(pdf + '#view=FitH&zoom=page-width');
+            return;
+          }
+        }catch(_){}
+        // Object fallback
+        wrap.innerHTML = '<object class="viewer" type="application/vnd.openxmlformats-officedocument.presentationml.presentation" data="'+pptx+'"><p style="padding:16px">Preview unavailable. <a href="'+pptx+'">Download the presentation</a>.</p></object>';
+        show('Preview blocked by host or private file. Use the buttons above.');
+        if(location.protocol==='file:'){ show('You are viewing this locally. Online viewers cannot read local files. Host via https or export a PDF.'); }
+      }
+      run();
+
+      // ------- Aspect presets -------
+      const presets = {
+        '16:9': 9/16,       // ratio = H/W
+        '16:10': 10/16,
+        '3:2': 2/3,
+        '4:3': 3/4,
+        '5:4': 4/5,
+        '1:1': 1,
+        'A': Math.SQRT1_2   // ~0.7071 (H/W) => 70.71%
+      };
+      document.querySelectorAll('[data-preset]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const key = btn.getAttribute('data-preset');
+          const HW = presets[key];
+          setRatioPercent(HW * 100);
+        });
+      });
+
+      // Custom ratio W:H
+      function setRatioPercent(percent){ document.documentElement.style.setProperty('--ratio', percent+'%'); }
+      document.getElementById('applyCustom').addEventListener('click', ()=>{
+        const w = parseFloat(document.getElementById('ratioW').value);
+        const h = parseFloat(document.getElementById('ratioH').value);
+        if(w>0 && h>0){
+          const percent = (h / w) * 100;
+          setRatioPercent(percent);
+        }
+      });
+
+      // Fit mode + Zoom
+      const fitMode = document.getElementById('fitMode');
+      const zoomCtl = document.getElementById('zoomCtl');
+      const zoomRange = document.getElementById('zoomRange');
+      const zoomVal = document.getElementById('zoomVal');
+
+      function applyFit(){
+        if(fitMode.value === 'cover'){
+          zoomCtl.style.display='flex';
+          document.documentElement.style.setProperty('--zoom', (parseInt(zoomRange.value,10)/100).toString());
+        }else{
+          zoomCtl.style.display='none';
+          document.documentElement.style.setProperty('--zoom', '1');
+        }
+      }
+      fitMode.addEventListener('change', applyFit);
+      zoomRange.addEventListener('input', ()=>{
+        zoomVal.textContent = zoomRange.value + '%';
+        document.documentElement.style.setProperty('--zoom', (parseInt(zoomRange.value,10)/100).toString());
+      });
+      applyFit();
+
     })();
-  })();
   </script>
 </body>
 </html>
